@@ -1,0 +1,29 @@
+{
+	"folders": [
+		{
+			"name": "conf",
+			"path": "../OWYWC/ML/conf"
+		},
+		{
+			"name": "OWYWC_MAIN",
+			"path": "."
+		},
+		{
+			"name": ".idea",
+			"path": "../OWYWC/ML/.idea"
+		},
+		{
+			"name": "perfomance_tests",
+			"path": "../OWYWC/ML/perfomance_tests"
+		},
+		{
+			"name": "notebooks",
+			"path": "../OWYWC/ML/notebooks"
+		},
+		{
+			"name": "data_for_tests",
+			"path": "../OWYWC/ML/data_for_tests"
+		}
+	],
+	"settings": {}
+}

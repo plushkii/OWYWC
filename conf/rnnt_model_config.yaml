@@ -1,0 +1,109 @@
+model_class: enc_dec_rnnt_bpe
+sample_rate: 16000
+log_prediction: true
+model_defaults:
+  enc_hidden: 768
+  pred_hidden: 320
+  join_hidden: 320
+
+preprocessor:
+  _target_: nemo.collections.asr.modules.audio_preprocessing.AudioToMelSpectrogramPreprocessor
+  sample_rate: 16000
+  n_fft: 400
+  n_window_size: 400
+  window_size: null
+  n_window_stride: 160
+  window_stride: null
+  features: 64
+  dither: 0.0
+  preemph: null
+  log: true
+  log_zero_guard_type: clamp
+  normalize: null
+  pad_to: 0
+  mel_norm: null
+  window: hann
+  log_zero_guard_value: 1e-9
+
+tokenizer:
+  dir: conf/tokenizer_all_sets/
+  type: bpe
+
+validation_ds:
+  shuffle: False
+  manifest_filepath: null
+
+encoder:
+  _target_: nemo.collections.asr.modules.ConformerEncoder
+  feat_in: 64
+  feat_out: -1
+  n_layers: 16
+  d_model: 768
+  subsampling: striding
+  subsampling_factor: 4
+  subsampling_conv_channels: 768
+  ff_expansion_factor: 4
+  self_attention_model: rel_pos
+  pos_emb_max_len: 5000
+  n_heads: 16
+  xscaling: false
+  untie_biases: true
+  conv_kernel_size: 31
+  dropout: 0.1
+  dropout_emb: 0.1
+  dropout_att: 0.1
+decoder:
+  _target_: nemo.collections.asr.modules.RNNTDecoder
+  normalization_mode: null
+  random_state_sampling: false
+  blank_as_pad: true
+  vocab_size: 512
+  prednet:
+    pred_hidden: 320
+    pred_rnn_layers: 1
+    t_max: null
+    dropout: 0.0
+joint:
+  _target_: nemo.collections.asr.modules.RNNTJoint
+  log_softmax: null
+  fuse_loss_wer: false
+  fused_batch_size: 1
+  jointnet:
+    joint_hidden: 320
+    activation: relu
+    dropout: 0.0
+    encoder_hidden: 768
+optim:
+  name: adamw
+  lr: 5.0e-05
+  betas:
+  - 0.9
+  - 0.98
+  weight_decay: 0.01
+  sched:
+    name: CosineAnnealing
+    warmup_steps: 10000
+    warmup_ratio: null
+    min_lr: 1.0e-07
+nemo_version: 1.12.0
+decoding:
+  strategy: greedy_batch
+  preserve_alignments: true
+  greedy:
+    max_symbols: 3
+  beam:
+    beam_size: 5
+    score_norm: true
+
+
+loss:
+  loss_name: default
+  mwer: false
+  rnnt_reduction: mean_batch
+  wer_coef: false
+  subtract_mean: true
+  warprnnt_numba_kwargs:
+    fastemit_lambda: 0.0
+    clamp: -1.0
+  rnnt_weight: 0.1
+  unique_hyp: true
