@@ -60,8 +60,9 @@ class SummaryTools:
             return f"{minutes:02}:{full_seconds:02}"
     
         
-    def transcribed_part(self, pipeline):
-        """Разбивает материал на части по parttime секунд для пересказа материала по таймкодам"""
+    def transcribed_for_retelling_part(self, pipeline):
+        """Разбивает текстовую часть материала на части по parttime секунд, для того чтобы в дальнейшем
+        скормить их в API GigaChat и получить пересказ для каждой"""
         
         speech_file = convert_wav(self.file_name)
         # Segment audio
@@ -70,20 +71,25 @@ class SummaryTools:
         BATCH_SIZE = 1
         transcriptions = self.model.transcribe(segments, batch_size=BATCH_SIZE)
         
-        self.transcribed_parts = []
+        self.transcribed_for_retelling = []
         
         for transcription, boundary in zip(transcriptions, boundaries):
             boundary_0 = self._format_time(boundary[0])
             boundary_1 = self._format_time(boundary[1])
-            self.transcribed_parts.append(boundary_0, boundary_1, transcription)
+            self.transcribed_for_retelling.append(boundary_0, boundary_1, transcription)
             print(f"[{boundary_0} - {boundary_1}]: {transcription}\n")
         
     
     def retelling_in_part(self):
+        """Скармливает полученные части API GigaChat, на выходе получает пересказ каждой части
+        в формате str
+        
+        example output:
+        ...[00:00:00 - 02:52:17] - Введение в случайные графы и объяснение их использования в различных ситуациях..."""
         
         self.line_for_propmt = []
         
-        for start, end, transcription in self.transcribed_parts:
+        for start, end, transcription in self.transcribed_for_retelling:
             self.line_for_propmt.append(f"[{start} - {end}]: {transcription}")
             
         giga = GigaChat(credentials=AUTHORIZATION_TOKEN_GIGA, model="GigaChat", verify_ssl_certs=False, profanity_check=False)
@@ -109,7 +115,8 @@ class SummaryTools:
     
     
     def transcribed_for_clips(self, pipeline):
-        """Разбивает материал на клипы по таймкодам"""
+        """Разбивает текстовую часть материала на части по [min_duration:max_duration] секунд, для того чтобы в дальнейшем
+        скормить их в API GigaChat и получить индексы самых релевантных частей для создания клипов"""
         
         speech_file = convert_wav(self.file_name)
         # Segment audio
@@ -123,15 +130,20 @@ class SummaryTools:
         for transcription, boundary in zip(transcriptions, boundaries):
             boundary_0 = self._format_time(boundary[0])
             boundary_1 = self._format_time(boundary[1])
-            self.transcribed_parts.append(boundary_0, boundary_1, transcription)
+            self.transcribed_for_summ_clips.append(boundary_0, boundary_1, transcription)
             print(f"[{boundary_0} - {boundary_1}]: {transcription}\n")
     
     
     def summ_for_clips(self):
+        """Скармливает полученные части API GigaChat, на выходе получает индексы самых релевантных частей для создания клипов
+        в формате str
+        
+        example output:
+        [04:10 - 04:37]: "Это очень важный момент, который я буду сейчас комментировать достаточно долго"..."""
         
         self.line_for_clips = []
         
-        for start, end, transcription in self.transcribed_parts:
+        for start, end, transcription in self.transcribed_for_summ_clips:
             self.line_for_propmt.append(f"[{start} - {end}]: {transcription}")
             
         giga = GigaChat(credentials=AUTHORIZATION_TOKEN_GIGA, model="GigaChat", verify_ssl_certs=False, profanity_check=False)
